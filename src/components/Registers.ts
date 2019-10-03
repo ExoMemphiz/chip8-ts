@@ -3,12 +3,12 @@ class Registers {
 	private addressRegister: number;
 	private programCounter: number;
 
-	constructor(amount: number = 0xF) {
+	constructor(amount: number = 0xF, pcInit: number = 0x200) {
 		for (let i = 0; i <= amount; i++) {
 			this.registers.push(0x0);
 		}
 		this.addressRegister = 0;
-		this.programCounter = 0;
+		this.programCounter = pcInit;
 	}
 
 	setRegister(index: number, value: number) {

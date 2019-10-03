@@ -1,13 +1,22 @@
 import Memory from "./Memory";
 import Registers from "./Registers";
+import Stack from "./Stack";
 
 export default class CPU {
 	memory: Memory;
 	registers: Registers;
+	stack: Stack;
 
-	constructor(memory: Memory, registers: Registers) {
+	constructor(memory: Memory, registers: Registers, stack: Stack) {
 		this.memory = memory;
 		this.registers = registers;
+		this.stack = stack;
+	}
+
+	executeNextInstruction() {
+		const pc = this.registers.getProgramCounter();
+		const instruction = (this.memory.getData(pc) << 8) | this.memory.getData(pc + 1);
+		this.handleInstruction(instruction);
 	}
 
 	debug() {
@@ -22,17 +31,59 @@ export default class CPU {
 
 		console.log("-- Memory --");
 		console.table(this.memory.getMemoryView32(0x200));
-		//console.table(this.memory.getMemoryView().buffer.slice(0, 16));
+		// console.table(this.memory.getMemoryView().buffer.slice(0, 16));
 	}
 
-	getInstruction(instruction: number) {
+	handleInstruction(instruction: number) {
 		const masked = instruction & 0xF000;
+		const nnn = instruction & 0x0FFF;
+		const nn = instruction & 0x00FF;
+		const n = instruction & 0x000F;
+		const x = instruction & 0x0F00;
+		const y = instruction & 0x00F0;
+
 		switch (masked) {
 			case 0x0:
 				return this.handleOpcode0(instruction);
 
+			case 0x1:
+				// 1NNN
+				// Jump to address nnn
+				return this.registers.setProgramCounter(nnn);
+
+			case 0x2:
+				// 2NNN
+				// Call subroutine at nnn
+				this.stack.push(this.registers.getProgramCounter() + 1);
+				return this.throwUnimplementedOpcode(instruction);
+
+			case 0x3:
+				// 3XNN
+				// Skip instruction if vX == nn
+				return this.throwUnimplementedOpcode(instruction);
+
+			case 0x4:
+				// 4XNN
+				// Skip instruction if vX != nn
+				return this.throwUnimplementedOpcode(instruction);
+
+			case 0x5:
+				// 5XY0
+				// Skip instruction if vX == vY
+				return this.throwUnimplementedOpcode(instruction);
+
+			case 0x6:
+				// 6XNN
+				// vX = nn
+				return this.throwUnimplementedOpcode(instruction);
+
+			case 0x7:
+				// 7XNN
+				// vX += nn
+				return this.throwUnimplementedOpcode(instruction);
+
 			default:
-				throw new Error(`Unknown Opcode: ${instruction.toString(16)}`);
+				return this.throwUnimplementedOpcode(instruction);
 		}
 	}
 
@@ -41,24 +92,25 @@ export default class CPU {
 		switch (masked) {
 			case 0xE0: {
 				// Clear Display
-				throw new Error(
-					`Instruction ${instruction.toString(
-						16
-					)} not yet implemented.`
-				);
+				return this.throwUnimplementedOpcode(instruction);
 			}
 
 			case 0xEE: {
 				// Return from subroutine
-				throw new Error(
-					`Instruction ${instruction.toString(
-						16
-					)} not yet implemented.`
-				);
+				return this.throwUnimplementedOpcode(instruction);
 			}
 
 			default:
-				throw new Error(`Unknown Opcode: ${instruction.toString(16)}`);
+				return this.throwUnimplementedOpcode(instruction);
 		}
+	}
+
+	throwUnimplementedOpcode(instruction: number) {
+		throw new Error(
+			`Instruction 0x${instruction
+				.toString(16)
+				.padStart(4, "0")
+				.toUpperCase()} not yet implemented.`
+		);
 	}
 }

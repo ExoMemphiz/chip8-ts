@@ -19,15 +19,8 @@ export default class Memory {
 	}
 
 	getMemoryView32(index: number) {
-		return [
-			...new Uint8Array(this.memoryView.buffer).slice(index, index + 32),
-		].map(
-			value =>
-				`hex: 0x${value
-					.toString(16)
-					.padStart(2, "0")}  dec: ${value
-					.toString()
-					.padStart(3, "0")}`
+		return [...new Uint8Array(this.memoryView.buffer).slice(index, index + 32)].map(
+			value => `hex: 0x${value.toString(16).padStart(2, "0")}  dec: ${value.toString().padStart(3, "0")}`
 		);
 	}
 }

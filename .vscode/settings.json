@@ -1,0 +1,11 @@
+{
+    "saveAndRun": {
+        "commands": [
+            {
+                "match": ".ts$",
+                "cmd": "npm run format",
+                "silent": false
+            }
+        ]
+    }
+}

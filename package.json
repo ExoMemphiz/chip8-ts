@@ -1,0 +1,31 @@
+{
+    "name": "chip8-ts",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "ts-node Index.ts",
+        "test": "jest",
+        "lint": "eslint ./src/**/*",
+        "lint-fix": "eslint ./src/**/* --fix",
+        "format": "prettier-eslint --write \"src/**/*.ts\" && prettier-eslint --write \"__tests__/**/*.ts\""
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/jest": "^24.0.18",
+        "@types/node": "^12.7.9",
+        "@typescript-eslint/eslint-plugin": "^2.3.2",
+        "@typescript-eslint/parser": "^2.3.2",
+        "eslint": "^6.5.1",
+        "eslint-config-prettier": "^6.3.0",
+        "eslint-plugin-number-literal-case": "^1.0.0",
+        "eslint-plugin-unicorn": "^12.0.1",
+        "jest": "^24.9.0",
+        "prettier-eslint-cli": "^5.0.0",
+        "ts-jest": "^24.1.0",
+        "ts-node": "^8.4.1",
+        "typescript": "^3.6.3"
+    }
+}

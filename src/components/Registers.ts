@@ -35,7 +35,7 @@ class Registers {
 		this.programCounter = value;
 	}
 
-	incrementProgramCounter(amount: number = 1) {
+	incrementProgramCounter(amount: number = 2) {
 		this.programCounter += amount;
 	}
 

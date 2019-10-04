@@ -11,6 +11,11 @@ const chip8 = new Chip8();
 
 chip8.loadRom(romBuffer);
 
-chip8.debug();
-
-chip8.step();
+try {
+	for (let i = 0; i < 10000; i++) {
+		chip8.step();
+	}
+} catch (error) {
+	chip8.debug();
+	console.log(error);
+}

@@ -45,7 +45,7 @@ export default class CPU {
 		const masked = (instruction & 0xF000) >> (3 * 4);
 		const nnn = instruction & 0x0FFF;
 		const nn = instruction & 0x00FF;
-		// const n = instruction & 0x000F;
+		const n = instruction & 0x000F;
 		const x = (instruction & 0x0F00) >> (2 * 4);
 		const y = (instruction & 0x00F0) >> (1 * 4);
 
@@ -119,6 +119,31 @@ export default class CPU {
 				// CXNN
 				// Set vX = bitwise &; Random(0, 255) & nn
 				return this.registers.setRegister(x, (Math.random() * 256) & nn);
+
+			case 0xD:
+				// DXYN
+				// Draws a sprite at coordinate (VX, VY).
+				// Sprites always have a width of 8 pixels and a height of N pixels.
+				// Each row of 8 pixels is read as bit-coded starting from memory location I.
+				// I value doesn’t change after the execution of this instruction.
+				//
+				// As described above, VF is set to 1 if any screen pixels are flipped from set to unset
+				// when the sprite is drawn, and to 0 if that doesn’t happen
+
+				// eslint-disable-next-line no-case-declarations
+				let erasedPixels = false;
+				for (let i = 0; i < n; i++) {
+					const bits = this.memory.getData(this.registers.getAddressRegister());
+					for (let j = 0; j < 8; j++) {
+						const bit = (bits & (0b1 << j)) >> j;
+						let pointX = this.registers.getRegister(x) + i * 8 + j;
+						let pointY = this.registers.getRegister(y) + i;
+						if (this.screen.xorPixel(pointX, pointY, bit === 0 ? false : true)) {
+							erasedPixels = true;
+						}
+					}
+				}
+				return this.registers.setRegister(0xF, erasedPixels ? 1 : 0);
 
 			default:
 				return this.throwUnimplementedOpcode(instruction);

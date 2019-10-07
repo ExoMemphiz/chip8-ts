@@ -49,11 +49,18 @@ export default class Screen {
 		return this.screen[x][y];
 	}
 
-	/*
-	draw(sprite: Array<boolean>, x: number, y: number): boolean {
-		let flipped = false;
-        
-		return flipped;
+	/**
+	 * XOR's the value with the currently stored one.
+	 * If a pixel is erased, it returns true.
+	 * @param x
+	 * @param y
+	 * @param value
+	 */
+	xorPixel(x: number, y: number, value: boolean) {
+		x = x % this.width;
+		y = y % this.height;
+		let initial = this.screen[x][y];
+		this.screen[x][y] = this.screen[x][y] !== value;
+		return initial && !this.screen[x][y];
 	}
-    */
 }

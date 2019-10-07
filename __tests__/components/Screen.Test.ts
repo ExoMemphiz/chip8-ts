@@ -29,8 +29,6 @@ describe("Testing Screen", () => {
 	});
 
 	test("Screen pixel can be flipped", () => {
-		console.log(screen.getScreen());
-
 		let x = 10;
 		let y = 10;
 		screen.flipPixel(x, y);
@@ -44,5 +42,27 @@ describe("Testing Screen", () => {
         }*/
 		expect(screen.getPixel(0, 10)).toBe(false);
 		expect(screen.getPixel(x, y)).toBe(true);
+	});
+
+	test("Screen can xor false and false", () => {
+		screen.xorPixel(0, 0, false);
+		expect(screen.getPixel(0, 0)).toBe(false);
+	});
+
+	test("Screen can xor false and true", () => {
+		screen.xorPixel(0, 0, true);
+		expect(screen.getPixel(0, 0)).toBe(true);
+	});
+
+	test("Screen can xor true and false", () => {
+		screen.setPixel(0, 0, true);
+		screen.xorPixel(0, 0, false);
+		expect(screen.getPixel(0, 0)).toBe(true);
+	});
+
+	test("Screen can xor true and true", () => {
+		screen.setPixel(0, 0, true);
+		screen.xorPixel(0, 0, true);
+		expect(screen.getPixel(0, 0)).toBe(false);
 	});
 });

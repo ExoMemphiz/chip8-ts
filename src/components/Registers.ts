@@ -12,6 +12,9 @@ class Registers {
 	}
 
 	setRegister(index: number, value: number) {
+		if (index > 0xF) {
+			throw new Error(`Register index: ${index} is out of range`);
+		}
 		this.registers[index] = value;
 	}
 

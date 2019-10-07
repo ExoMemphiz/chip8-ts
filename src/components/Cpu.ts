@@ -42,14 +42,14 @@ export default class CPU {
 	}
 
 	handleInstruction(instruction: number) {
-		const masked = (instruction & 0xF000) >> 3;
+		const masked = (instruction & 0xF000) >> (3 * 4);
 		const nnn = instruction & 0x0FFF;
 		const nn = instruction & 0x00FF;
 		// const n = instruction & 0x000F;
-		const x = (instruction & 0x0F00) >> 2;
-		const y = (instruction & 0x00F0) >> 1;
+		const x = (instruction & 0x0F00) >> (2 * 4);
+		const y = (instruction & 0x00F0) >> (1 * 4);
 
-		console.log(`Switching on: ${masked.toString(16)}`);
+		// console.log(`Switching on: ${masked.toString(16)}`);
 
 		switch (masked) {
 			case 0x0:
@@ -148,8 +148,8 @@ export default class CPU {
 	}
 
 	handleOpcode8(instruction: number) {
-		const x = instruction & 0x0F00;
-		const y = instruction & 0x00F0;
+		const x = (instruction & 0x0F00) >> (2 * 4);
+		const y = (instruction & 0x00F0) >> (1 * 4);
 		const n = instruction & 0x000F;
 
 		switch (n) {

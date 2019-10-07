@@ -1,0 +1,124 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<!--<script src="http://localhost:4000/socket.io/socket.io.js"></script> -->
+	<!-- <script type="text/javascript" src="scripts.js"></script> -->
+
+    <title>HTML5 Canvas + Node.JS Socket.io</title>
+    <style>
+        div#container {
+            padding: 10px
+        }
+        canvas {
+            margin-top: 20px
+        }
+        table#hex-keypad {
+            background: #CCC;
+            margin-top: 20px;
+        }
+        td#hex-number {
+            padding: 10px;
+            padding-left: 20px;
+            padding-right: 20px;
+            font-size: 20px;
+            user-select: none;
+            -moz-user-select: none;
+            -khtml-user-select: none;
+            -webkit-user-select: none;
+            -o-user-select: none;
+        }
+        .pressed {
+            background: #2ad58a
+        }
+        div#description {
+            margin-left: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        Chip8 Typescript Emulator
+        <article><!-- our canvas will be inserted here--></article>
+        <table id="hex-keypad">
+            <tr>
+                <td id="hex-number">C</td>
+                <td id="hex-number">D</td>
+                <td id="hex-number">E</td>
+                <td id="hex-number">F</td>
+            </tr>
+            <tr>
+                <td id="hex-number">8</td>
+                <td id="hex-number">9</td>
+                <td id="hex-number">A</td>
+                <td class="pressed" id="hex-number">B</td>
+            </tr>            
+            <tr>
+                <td id="hex-number">4</td>
+                <td id="hex-number">5</td>
+                <td id="hex-number">6</td>
+                <td id="hex-number">7</td>
+            </tr>
+            <tr>
+                <td id="hex-number">0</td>
+                <td id="hex-number">1</td>
+                <td id="hex-number">2</td>
+                <td id="hex-number">3</td>
+            </tr>
+        </table>
+        <div id="description">
+            <p id="infoText"></p>
+        </div>
+    </div>
+    
+
+
+	<!-- Scripts required -->
+	<!-- <script src="http://localhost:4000/socket.io/socket.io.js"></script> -->
+    <!-- <script type="text/javascript" src="scripts.js"></script> -->
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const canvas = document.createElement("canvas");
+
+        canvas.width = 640;
+        canvas.height = 320;
+        const context = canvas.getContext("2d");
+
+        document.querySelectorAll("article")[0].append(canvas);
+        // const socket = io.connect("http://localhost:4000");
+        socket.on("draw", (data) => {
+            console.log(`Drawing`, data);
+            for (let i = 0; i < data.length; i++) {
+                for (let j = 0; j < data[i].length; j++) {
+                    context.fillStyle = data[i][j] ? "white" : "black";
+                    context.fillRect(i * 10, j * 10, 10, 10);
+                }
+            }
+        })
+
+        socket.on("keys", (data) => {
+            console.log(data);
+            const hexNumbers = document.querySelectorAll("#hex-number");
+            console.log(hexNumbers);
+            for (let i = 0; i < data.length; i++) {
+                if (data[i]) {
+                    hexNumbers[i].classList.add("pressed");
+                } else {
+                    hexNumbers[i].classList.remove("pressed");
+                }
+            }
+        })
+
+        document.body.onkeydown = (e) => {
+            socket.emit("keydown", e.key);
+        }
+
+        document.body.onkeyup = (e) => {
+            socket.emit("keyup", e.key);
+        }
+
+    </script>
+</body>

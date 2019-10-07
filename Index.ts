@@ -19,3 +19,4 @@ try {
 	chip8.debug();
 	console.log(error);
 }
+

@@ -8,8 +8,13 @@ export default class Screen {
 		this.width = width;
 		this.height = height;
 
-		// @ts-ignore
-		this.screen = new Array<number>(width).fill(new Array<number>(height).fill(0));
+		this.screen = [];
+		for (let i = 0; i < width; i++) {
+			this.screen.push([]);
+			for (let j = 0; j < height; j++) {
+				this.screen[i].push(false);
+			}
+		}
 	}
 
 	getScreen() {
@@ -30,6 +35,18 @@ export default class Screen {
 
 	flipPixel(x: number, y: number) {
 		this.screen[x][y] = !this.screen[x][y];
+	}
+
+	getWidth() {
+		return this.width;
+	}
+
+	getHeight() {
+		return this.height;
+	}
+
+	getPixel(x: number, y: number) {
+		return this.screen[x][y];
 	}
 
 	/*

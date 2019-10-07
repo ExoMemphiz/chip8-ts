@@ -3,12 +3,14 @@ import CPU from "./components/Cpu";
 import Registers from "./components/Registers";
 import Stack from "./components/Stack";
 import Screen from "./components/Screen";
+import Keyboard from "./components/Keyboard";
 
 class Chip8 {
 	private memory: Memory;
 	private registers: Registers;
 	private stack: Stack;
 	private screen: Screen;
+	private keyboard: Keyboard;
 	private cpu: CPU;
 
 	constructor() {
@@ -16,7 +18,8 @@ class Chip8 {
 		this.registers = new Registers();
 		this.stack = new Stack();
 		this.screen = new Screen();
-		this.cpu = new CPU(this.memory, this.registers, this.stack, this.screen);
+		this.keyboard = new Keyboard();
+		this.cpu = new CPU(this.memory, this.registers, this.stack, this.screen, this.keyboard);
 	}
 
 	step() {

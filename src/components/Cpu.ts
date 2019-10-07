@@ -2,18 +2,21 @@ import Memory from "./Memory";
 import Registers from "./Registers";
 import Stack from "./Stack";
 import Screen from "./Screen";
+import Keyboard from "./Keyboard";
 
 export default class CPU {
 	memory: Memory;
 	registers: Registers;
 	stack: Stack;
 	screen: Screen;
+	keyboard: Keyboard;
 
-	constructor(memory: Memory, registers: Registers, stack: Stack, screen: Screen) {
+	constructor(memory: Memory, registers: Registers, stack: Stack, screen: Screen, keyboard: Keyboard) {
 		this.memory = memory;
 		this.registers = registers;
 		this.stack = stack;
 		this.screen = screen;
+		this.keyboard = keyboard;
 	}
 
 	executeNextInstruction() {
@@ -145,6 +148,9 @@ export default class CPU {
 				}
 				return this.registers.setRegister(0xF, erasedPixels ? 1 : 0);
 
+			case 0xE:
+				return this.handleOpcodeE(instruction);
+
 			default:
 				return this.throwUnimplementedOpcode(instruction);
 		}
@@ -241,6 +247,92 @@ export default class CPU {
 				// Stores the most significant bit of VX in VF and then shifts VX to the left by 1
 				this.registers.setRegister(0xF, this.registers.getRegister(x) & 0b10000000);
 				return this.registers.setRegister(x, this.registers.getRegister(x) << 1);
+
+			default:
+				return this.throwUnimplementedOpcode(instruction);
+		}
+	}
+
+	handleOpcodeE(instruction: number) {
+		const x = (instruction & 0x0F00) >> (2 * 4);
+
+		switch (instruction & 0xFF) {
+			case 0x9E:
+				// EX9E
+				// Skips the next instruction if the key stored in VX is pressed
+				return (
+					this.keyboard.getPressed()[this.registers.getRegister(x)] &&
+					this.registers.incrementProgramCounter()
+				);
+
+			case 0xA1:
+				// EXA1
+				// Skips the next instruction if the key stored in VX isn't pressed
+				return (
+					!this.keyboard.getPressed()[this.registers.getRegister(x)] &&
+					this.registers.incrementProgramCounter()
+				);
+
+			default:
+				return this.throwUnimplementedOpcode(instruction);
+		}
+	}
+
+	handleOpcodeF(instruction: number) {
+		const x = (instruction & 0x0F00) >> (2 * 4);
+
+		switch (instruction & 0xFF) {
+			case 0x07:
+				// FX07
+				// Sets VX to the value of the delay timer.
+				return;
+
+			case 0x0A:
+				// FX0A
+				// A key press is awaited, and then stored in VX. (Blocking)
+				return;
+
+			case 0x15:
+				// FX15
+				// Sets the delay timer to VX.
+				return;
+
+			case 0x18:
+				// FX18
+				// Sets the sound timer to VX.
+				return;
+
+			case 0x1E:
+				// FX1E
+				// Adds VX to I
+				return;
+
+			case 0x29:
+				// FX29
+				// Sets I to the location of the sprite for the character in VX.
+				// Characters 0-F (in hexadecimal) are represented by a 4x5 font.
+				return;
+
+			case 0x33:
+				// FX33
+				// Stores the binary-coded decimal representation of VX in address I.
+				// Decimal hundres in I, decimal tens in I + 1, decimal ones at I + 2.
+				return;
+
+			case 0x55:
+				// FX55
+				// Stores V0 to VX (including VX) in memory starting at address I.
+				// The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+				return;
+
+			case 0x65:
+				// FX65
+				// Fills V0 to VX (including VX) with values from memory starting at address I.
+				// The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+				return;
+
+			default:
+				return this.throwUnimplementedOpcode(instruction);
 		}
 	}
 

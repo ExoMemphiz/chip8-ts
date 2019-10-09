@@ -90,7 +90,7 @@
         document.querySelectorAll("article")[0].append(canvas);
         // const socket = io.connect("http://localhost:4000");
         socket.on("draw", (data) => {
-            console.log(`Drawing`, data);
+            // console.log(`Drawing`, data);
             for (let i = 0; i < data.length; i++) {
                 for (let j = 0; j < data[i].length; j++) {
                     context.fillStyle = data[i][j] ? "white" : "black";

@@ -4,6 +4,7 @@ import Registers from "./components/Registers";
 import Stack from "./components/Stack";
 import Screen from "./components/Screen";
 import Keyboard from "./components/Keyboard";
+import Timer from "./components/Timer";
 
 class Chip8 {
 	private memory: Memory;
@@ -11,6 +12,8 @@ class Chip8 {
 	private stack: Stack;
 	private screen: Screen;
 	private keyboard: Keyboard;
+	private delayTimer: Timer;
+	private soundTimer: Timer;
 	private cpu: CPU;
 
 	constructor() {
@@ -19,7 +22,17 @@ class Chip8 {
 		this.stack = new Stack();
 		this.screen = new Screen();
 		this.keyboard = new Keyboard();
-		this.cpu = new CPU(this.memory, this.registers, this.stack, this.screen, this.keyboard);
+		this.delayTimer = new Timer();
+		this.soundTimer = new Timer();
+		this.cpu = new CPU(
+			this.memory,
+			this.registers,
+			this.stack,
+			this.screen,
+			this.keyboard,
+			this.delayTimer,
+			this.soundTimer
+		);
 	}
 
 	step() {
@@ -36,6 +49,18 @@ class Chip8 {
 			this.memory.storeData(element, memoryLocation);
 			memoryLocation++;
 		}
+	}
+
+	getKeyboard() {
+		return this.keyboard;
+	}
+
+	getScreen() {
+		return this.screen.getScreen();
+	}
+
+	flipPixel(x: number, y: number) {
+		this.screen.flipPixel(x, y);
 	}
 }
 

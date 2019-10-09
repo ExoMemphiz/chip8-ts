@@ -3,6 +3,7 @@ import Registers from "./Registers";
 import Stack from "./Stack";
 import Screen from "./Screen";
 import Keyboard from "./Keyboard";
+import Timer from "./Timer";
 
 export default class CPU {
 	memory: Memory;
@@ -10,13 +11,25 @@ export default class CPU {
 	stack: Stack;
 	screen: Screen;
 	keyboard: Keyboard;
+	delayTimer: Timer;
+	soundTimer: Timer;
 
-	constructor(memory: Memory, registers: Registers, stack: Stack, screen: Screen, keyboard: Keyboard) {
+	constructor(
+		memory: Memory,
+		registers: Registers,
+		stack: Stack,
+		screen: Screen,
+		keyboard: Keyboard,
+		delayTimer: Timer,
+		soundTimer: Timer
+	) {
 		this.memory = memory;
 		this.registers = registers;
 		this.stack = stack;
 		this.screen = screen;
 		this.keyboard = keyboard;
+		this.delayTimer = delayTimer;
+		this.soundTimer = soundTimer;
 	}
 
 	executeNextInstruction() {
@@ -285,50 +298,79 @@ export default class CPU {
 			case 0x07:
 				// FX07
 				// Sets VX to the value of the delay timer.
-				return;
+				return this.registers.setRegister(x, this.delayTimer.getCurrentTime());
 
 			case 0x0A:
 				// FX0A
 				// A key press is awaited, and then stored in VX. (Blocking)
-				return;
+				// eslint-disable-next-line no-case-declarations
+				let breaking = -1;
+				while (breaking < 0) {
+					for (let i = 0; i < this.keyboard.PRESSED.length; i++) {
+						if (this.keyboard.PRESSED[i]) {
+							breaking = i;
+						}
+					}
+				}
+				return this.registers.setRegister(x, breaking);
 
 			case 0x15:
 				// FX15
 				// Sets the delay timer to VX.
-				return;
+				return this.delayTimer.setTimer(this.registers.getRegister(x));
 
 			case 0x18:
 				// FX18
 				// Sets the sound timer to VX.
-				return;
+				return this.soundTimer.setTimer(this.registers.getRegister(x));
 
 			case 0x1E:
 				// FX1E
 				// Adds VX to I
-				return;
+				return this.registers.setAddressRegister(
+					this.registers.getAddressRegister() + this.registers.getRegister(x)
+				);
 
 			case 0x29:
 				// FX29
 				// Sets I to the location of the sprite for the character in VX.
 				// Characters 0-F (in hexadecimal) are represented by a 4x5 font.
-				return;
+				return this.throwUnimplementedOpcode(instruction);
 
 			case 0x33:
 				// FX33
 				// Stores the binary-coded decimal representation of VX in address I.
 				// Decimal hundres in I, decimal tens in I + 1, decimal ones at I + 2.
+
+				// eslint-disable-next-line no-case-declarations
+				let hundreds = Math.floor(this.registers.getRegister(x) / 100);
+				// eslint-disable-next-line no-case-declarations
+				let tens = Math.floor((this.registers.getRegister(x) - hundreds * 100) / 10);
+				// eslint-disable-next-line no-case-declarations
+				let ones = Math.floor(this.registers.getRegister(x) - hundreds * 100 - tens * 10);
+				this.memory.storeData(hundreds, this.registers.getAddressRegister());
+				this.memory.storeData(tens, this.registers.getAddressRegister() + 1);
+				this.memory.storeData(ones, this.registers.getAddressRegister() + 2);
 				return;
 
 			case 0x55:
 				// FX55
 				// Stores V0 to VX (including VX) in memory starting at address I.
 				// The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+
+				for (let i = 0; i <= this.registers.getRegister(x); i++) {
+					this.memory.storeData(this.registers.getRegister(0), this.registers.getAddressRegister() + i);
+				}
 				return;
 
 			case 0x65:
 				// FX65
 				// Fills V0 to VX (including VX) with values from memory starting at address I.
 				// The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+
+				for (let i = 0; i <= this.registers.getRegister(x); i++) {
+					this.registers.setRegister(i, this.memory.getData(this.registers.getAddressRegister() + i));
+				}
 				return;
 
 			default:

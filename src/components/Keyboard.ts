@@ -15,7 +15,7 @@ export default class Keyboard {
 				return i;
 			}
 		}
-		console.log(`${input.toLowerCase()} !== z`);
+		// console.log(`${input.toLowerCase()} !== z`);
 	}
 
 	onPress(key: number) {

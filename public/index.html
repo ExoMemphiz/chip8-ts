@@ -71,6 +71,15 @@
         <div id="description">
             <p id="infoText"></p>
         </div>
+        Frames Pr Second: <input type="number" id="fps" value="60">
+        <button id="togglePause" onclick="togglePause()">Start</button>
+        <br>
+        <button onclick="step()">Step</button>
+        <br>
+        <br>
+        Memory Region: <input type="number" id="memoryRegion">
+        Debug Log Screen: <input type="checkbox" id="screenDebug">
+        <button onclick="debug()">Debug</button>
     </div>
     
 
@@ -118,6 +127,23 @@
 
         document.body.onkeyup = (e) => {
             socket.emit("keyup", e.key);
+        }
+
+        function step() {
+            socket.emit("step");
+        }
+
+        function debug() {
+            const screenDebug = document.querySelector("#screenDebug");
+            const memoryRegion = document.querySelector("#memoryRegion");
+            socket.emit("debug", [screenDebug.checked, memoryRegion.value]);
+        }
+
+        function togglePause() {
+            const togglePause = document.querySelector("#togglePause");
+            const fps = document.querySelector("#fps");
+            togglePause.textContent = (togglePause.textContent === "Pause" ? "Start" : "Pause");
+            socket.emit("togglePause", fps.value);
         }
 
     </script>

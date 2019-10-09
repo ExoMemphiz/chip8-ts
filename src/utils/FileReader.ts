@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-export default class FileReader {
+class FileReader {
 	readFile(filePath: string) {
 		const resolvedPath = path.resolve(__dirname, `../../${filePath}`);
 		if (fs.existsSync(resolvedPath)) {
@@ -10,3 +10,6 @@ export default class FileReader {
 		throw new Error(`File ${resolvedPath} does not exist`);
 	}
 }
+
+const fileReader = new FileReader();
+export default fileReader;

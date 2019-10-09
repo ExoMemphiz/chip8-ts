@@ -5,7 +5,7 @@ if (!process.argv[2]) {
 	throw new Error("You must specify a valid path to a rom (assume navigation from root folder of this project)");
 }
 
-const romBuffer = new FileReader().readFile(process.argv[2]);
+const romBuffer = FileReader.readFile(process.argv[2]);
 
 const chip8 = new Chip8();
 

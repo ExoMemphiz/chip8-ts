@@ -8,25 +8,18 @@ export default class Timer {
 		this.hz = hz;
 		this.value = value;
 		this.onEndCallback = onEndCallback;
-		this.start();
 	}
 
 	setTimer(value: number) {
 		this.value = value;
-		this.start();
 	}
 
-	start() {
-		if (this.value > 0) {
-			this.intervalID = setInterval(() => {
-				if (--this.value <= 0) {
-					this.value = 0;
-					if (this.intervalID) {
-						clearInterval(this.intervalID);
-					}
-					this.onEndCallback && this.onEndCallback();
-				}
-			}, 1000 / this.hz);
+	tick() {
+		if (--this.value <= 0) {
+			this.value = 0;
+			if (this.onEndCallback) {
+				this.onEndCallback();
+			}
 		}
 	}
 

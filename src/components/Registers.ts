@@ -42,6 +42,10 @@ class Registers {
 		this.programCounter += amount;
 	}
 
+	decrementProgramCounter(amount: number = 2) {
+		this.programCounter -= amount;
+	}
+
 	getProgramCounter() {
 		return this.programCounter;
 	}

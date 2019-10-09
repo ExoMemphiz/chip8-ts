@@ -17,9 +17,10 @@ describe("Testing Timer", () => {
 	});
 
 	test("Will call callback when finished", done => {
-		timer.setTimer(60);
+		timer.setTimer(1);
 		timer.onEnd(() => {
 			done();
 		});
+		timer.tick();
 	});
 });

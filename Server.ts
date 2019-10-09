@@ -3,10 +3,13 @@ import http from "http";
 import ioSocket from "socket.io";
 import open from "open";
 import Chip8 from "./src/Chip8";
+import FileReader from "./src/utils/FileReader";
 
 const app = express();
 const server = http.createServer(app);
 const io = ioSocket.listen(server);
+
+let TICKS_PR_SECOND = 60;
 
 app.get("/", (request, response) => {
 	response.sendFile(__dirname + "/public/index.html");
@@ -21,8 +24,14 @@ io.on("connection", (socket) => {
 });
 
 function setupSocket(socket: ioSocket.Socket) {
+
+	let chip8 = new Chip8();
+	chip8.loadRom(FileReader.readFile("/roms/pong.ch8"));
+
 	// @ts-ignore
-	socket["emulator"] = new Chip8();
+	socket["emulator"] = chip8;
+	// @ts-ignore
+	socket["togglePause"] = true;
 	socket.on("keydown", (data) => {
 		let mapped = mapKey(socket, data);
 		if (typeof(mapped) === "number") {
@@ -37,12 +46,16 @@ function setupSocket(socket: ioSocket.Socket) {
 			emitEvent(socket, "keys");
 		}
 	});
+	socket.on("step", () => {
+		step(socket);
+	});
     
-	// @ts-ignore
-	socket["intervalID"] = setInterval(() => {
-		randomWriteScreen(socket);
-		emitEvent(socket, "draw");
-	}, 1000 / 24);
+	socket.on("debug", data => {
+		// @ts-ignore
+		socket["emulator"].debug(data[0], parseInt(data[1]));
+	});
+    
+	startSocketInterval(socket);
    
 	socket.on("disconnect", () => {
 		console.log("Client disconnected");
@@ -50,6 +63,18 @@ function setupSocket(socket: ioSocket.Socket) {
 		clearInterval(socket["intervalID"]);
 	});
     
+	socket.on("togglePause", (fps) => {
+		TICKS_PR_SECOND = parseInt(fps);
+		clearSocketInterval(socket);
+		startSocketInterval(socket);
+		togglePause(socket);
+	});
+
+}
+
+function togglePause(socket: ioSocket.Socket) {
+	// @ts-ignore
+	socket["togglePause"] = !socket["togglePause"];
 }
 
 function mapKey(socket: ioSocket.Socket, data: any) {
@@ -67,6 +92,28 @@ function releaseKey(socket: ioSocket.Socket, key: number) {
 	return socket["emulator"].getKeyboard().onRelease(key);
 }
 
+function step(socket: ioSocket.Socket) {
+	// @ts-ignore
+	return socket["emulator"].step();
+}
+
+function startSocketInterval(socket: ioSocket.Socket) {
+	// @ts-ignore
+	socket["intervalID"] = setInterval(() => {
+		emitEvent(socket, "draw");
+		// @ts-ignore
+		if (!socket["togglePause"]) {
+			step(socket);
+		}
+	}, 1000 / TICKS_PR_SECOND);
+}
+
+function clearSocketInterval(socket: ioSocket.Socket) {
+	// @ts-ignore
+	clearInterval(socket["intervalID"]);
+}
+
+/*
 function randomWriteScreen(socket: ioSocket.Socket) {
 	// @ts-ignore
 	const screen: Array<Array<boolean>> = socket["emulator"].getScreen();
@@ -75,6 +122,7 @@ function randomWriteScreen(socket: ioSocket.Socket) {
 	// @ts-ignore
 	socket["emulator"].flipPixel(x, y);
 }
+*/
 
 function emitEvent(socket: ioSocket.Socket, event: "keys" | "draw") {
 

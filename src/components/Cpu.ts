@@ -37,24 +37,39 @@ export default class CPU {
 		const instruction = (this.memory.getData(pc) << 8) | this.memory.getData(pc + 1);
 		this.handleInstruction(instruction);
 		this.registers.incrementProgramCounter();
+		this.soundTimer.tick();
+		this.delayTimer.tick();
 	}
 
-	debug() {
+	debug(screen: boolean = false, memoryRegion: number = 0x200) {
 		console.log("-- Registers V0 to VF --");
 		console.table(this.registers.getAll());
 
 		console.log("-- Address Register --");
-		console.table([this.registers.getAddressRegister()]);
+		console.table([
+			`0x${this.registers
+				.getAddressRegister()
+				.toString(16)
+				.toUpperCase()} (${this.registers.getAddressRegister()})`,
+		]);
 
 		console.log("-- Program Counter --");
-		console.table([this.registers.getProgramCounter()]);
+		console.table([
+			`0x${this.registers
+				.getProgramCounter()
+				.toString(16)
+				.toUpperCase()
+				.padStart(4, "0")} (${this.registers.getProgramCounter()})`,
+		]);
 
 		console.log("-- Memory --");
-		console.table(this.memory.getMemoryView32(0x200));
+		console.table(this.memory.getMemoryView32(memoryRegion));
 		// console.table(this.memory.getMemoryView().buffer.slice(0, 16));
 
-		console.log(" -- Screen --");
-		console.table(this.screen.getScreen().map(array => array.map(value => (value ? 1 : 0))));
+		if (screen) {
+			console.log(" -- Screen --");
+			console.table(this.screen.getScreen().map(array => array.map(value => (value ? 1 : 0))));
+		}
 	}
 
 	handleInstruction(instruction: number) {
@@ -74,13 +89,15 @@ export default class CPU {
 			case 0x1:
 				// 1NNN
 				// Jump to address nnn
-				return this.registers.setProgramCounter(nnn);
+				this.registers.setProgramCounter(nnn);
+				return this.registers.decrementProgramCounter();
 
 			case 0x2:
 				// 2NNN
 				// Call subroutine at nnn
 				this.stack.push(this.registers.getProgramCounter() + 1);
-				return this.registers.setProgramCounter(nnn);
+				this.registers.setProgramCounter(nnn);
+				return this.registers.decrementProgramCounter();
 
 			case 0x3:
 				// 3XNN
@@ -129,7 +146,8 @@ export default class CPU {
 			case 0xB:
 				// BNNN
 				// Jumps to the address NNN plus V0
-				return this.registers.setProgramCounter(nnn + this.registers.getRegister(0));
+				this.registers.setProgramCounter(nnn + this.registers.getRegister(0));
+				return this.registers.decrementProgramCounter();
 
 			case 0xC:
 				// CXNN
@@ -164,6 +182,9 @@ export default class CPU {
 			case 0xE:
 				return this.handleOpcodeE(instruction);
 
+			case 0xF:
+				return this.handleOpcodeF(instruction);
+
 			default:
 				return this.throwUnimplementedOpcode(instruction);
 		}
@@ -183,7 +204,8 @@ export default class CPU {
 				if (!nextLine) {
 					throw new Error("Stack was empty, no subroutine to return from!");
 				}
-				return this.registers.setProgramCounter(nextLine);
+				this.registers.setProgramCounter(nextLine);
+				return this.registers.decrementProgramCounter();
 			}
 
 			default:
@@ -335,7 +357,7 @@ export default class CPU {
 				// FX29
 				// Sets I to the location of the sprite for the character in VX.
 				// Characters 0-F (in hexadecimal) are represented by a 4x5 font.
-				return this.throwUnimplementedOpcode(instruction);
+				return this.registers.setAddressRegister(this.registers.getRegister(x) * 5);
 
 			case 0x33:
 				// FX33
@@ -345,9 +367,16 @@ export default class CPU {
 				// eslint-disable-next-line no-case-declarations
 				let hundreds = Math.floor(this.registers.getRegister(x) / 100);
 				// eslint-disable-next-line no-case-declarations
-				let tens = Math.floor((this.registers.getRegister(x) - hundreds * 100) / 10);
+				let tens = Math.floor((this.registers.getRegister(x) / 10) % 10);
 				// eslint-disable-next-line no-case-declarations
-				let ones = Math.floor(this.registers.getRegister(x) - hundreds * 100 - tens * 10);
+				let ones = Math.floor(this.registers.getRegister(x) % 10);
+
+				console.log(
+					`FX33: on value: ${this.registers.getRegister(
+						x
+					)} hundreds: ${hundreds}, tens: ${tens}, onex: ${ones}`
+				);
+
 				this.memory.storeData(hundreds, this.registers.getAddressRegister());
 				this.memory.storeData(tens, this.registers.getAddressRegister() + 1);
 				this.memory.storeData(ones, this.registers.getAddressRegister() + 2);
@@ -383,7 +412,9 @@ export default class CPU {
 			`Instruction 0x${instruction
 				.toString(16)
 				.padStart(4, "0")
-				.toUpperCase()} not yet implemented. Decimal: ${instruction}`
+				.toUpperCase()} not yet implemented. Decimal: ${instruction}.` +
+				` Program Counter: 0x${this.registers.getProgramCounter().toString(16)}` +
+				` (${this.registers.getProgramCounter()})`
 		);
 	}
 }

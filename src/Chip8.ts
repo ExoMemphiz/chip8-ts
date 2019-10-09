@@ -5,6 +5,7 @@ import Stack from "./components/Stack";
 import Screen from "./components/Screen";
 import Keyboard from "./components/Keyboard";
 import Timer from "./components/Timer";
+import numberSprites from "./utils/NumberSprites";
 
 class Chip8 {
 	private memory: Memory;
@@ -18,6 +19,7 @@ class Chip8 {
 
 	constructor() {
 		this.memory = new Memory(4096);
+		numberSprites.loadIntoMemory(this.memory);
 		this.registers = new Registers();
 		this.stack = new Stack();
 		this.screen = new Screen();
@@ -39,8 +41,8 @@ class Chip8 {
 		this.cpu.executeNextInstruction();
 	}
 
-	debug() {
-		this.cpu.debug();
+	debug(screen: boolean = false, memoryRegion: number = 0x200) {
+		this.cpu.debug(screen, memoryRegion);
 	}
 
 	loadRom(buffer: Buffer) {

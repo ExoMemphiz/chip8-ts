@@ -26,7 +26,7 @@ io.on("connection", (socket) => {
 function setupSocket(socket: ioSocket.Socket) {
 
 	let chip8 = new Chip8();
-	chip8.loadRom(FileReader.readFile("/roms/pong.ch8"));
+	chip8.loadRom(FileReader.readFile("/roms/tictac.ch8"));
 
 	// @ts-ignore
 	socket["emulator"] = chip8;

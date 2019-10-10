@@ -172,10 +172,10 @@ export default class CPU {
 				// eslint-disable-next-line no-case-declarations
 				let erasedPixels = false;
 				for (let i = 0; i < n; i++) {
-					const byte = this.memory.getData(this.registers.getAddressRegister());
+					const byte = this.memory.getData(this.registers.getAddressRegister() + i);
 					const erased = this.screen.drawByte(
 						this.registers.getRegister(x),
-						this.registers.getRegister(y),
+						this.registers.getRegister(y) + i,
 						byte
 					);
 					if (erased) {
@@ -296,7 +296,7 @@ export default class CPU {
 			case 0xE:
 				// 8XYE
 				// Stores the most significant bit of VX in VF and then shifts VX to the left by 1
-				this.registers.setRegister(0xF, this.registers.getRegister(x) & 0b10000000);
+				this.registers.setRegister(0xF, (this.registers.getRegister(x) & 0b10000000) >> 7);
 				return this.registers.setRegister(x, this.registers.getRegister(x) << 1);
 
 			default:
@@ -343,12 +343,13 @@ export default class CPU {
 				// A key press is awaited, and then stored in VX. (Blocking)
 				// eslint-disable-next-line no-case-declarations
 				let breaking = -1;
-				while (breaking < 0) {
-					for (let i = 0; i < this.keyboard.PRESSED.length; i++) {
-						if (this.keyboard.PRESSED[i]) {
-							breaking = i;
-						}
+				for (let i = 0; i < this.keyboard.PRESSED.length; i++) {
+					if (this.keyboard.PRESSED[i]) {
+						breaking = i;
 					}
+				}
+				if (breaking === -1) {
+					return this.registers.decrementProgramCounter();
 				}
 				return this.registers.setRegister(x, breaking);
 
@@ -403,8 +404,8 @@ export default class CPU {
 				// Stores V0 to VX (including VX) in memory starting at address I.
 				// The offset from I is increased by 1 for each value written, but I itself is left unmodified.
 
-				for (let i = 0; i <= this.registers.getRegister(x); i++) {
-					this.memory.storeData(this.registers.getRegister(0), this.registers.getAddressRegister() + i);
+				for (let i = 0; i <= x; i++) {
+					this.memory.storeData(this.registers.getRegister(i), this.registers.getAddressRegister() + i);
 				}
 				return;
 
@@ -413,9 +414,14 @@ export default class CPU {
 				// Fills V0 to VX (including VX) with values from memory starting at address I.
 				// The offset from I is increased by 1 for each value written, but I itself is left unmodified.
 
-				for (let i = 0; i <= this.registers.getRegister(x); i++) {
+				for (let i = 0; i <= x; i++) {
 					this.registers.setRegister(i, this.memory.getData(this.registers.getAddressRegister() + i));
 				}
+				/*
+				for (let i = 0; i <= this.registers.getRegister(x); i++) {
+					this.registers.setRegister(i, this.memory.getData(this.registers.getAddressRegister() + i));
+                }
+                */
 				return;
 
 			default:

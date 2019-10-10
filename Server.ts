@@ -10,10 +10,10 @@ const app = express();
 const server = http.createServer(app);
 const io = ioSocket.listen(server);
 
-let TICKS_PR_SECOND = 60;
+let TICKS_PR_SECOND = 500;
 
 app.get("/", (request, response) => {
-	response.sendFile(__dirname + "/public/index.soundembed.html");
+	response.sendFile(__dirname + "/public/index.html");
 });
 
 let connected = false;

@@ -41,8 +41,8 @@ class Chip8 {
 		this.cpu.executeNextInstruction();
 	}
 
-	debug(screen: boolean = false, memoryRegion: number = 0x200) {
-		this.cpu.debug(screen, memoryRegion);
+	debug(screen: boolean = false, memoryStart: number = 0x200, memoryEnd = 0x220) {
+		this.cpu.debug(screen, memoryStart, memoryEnd);
 	}
 
 	loadRom(buffer: Buffer) {

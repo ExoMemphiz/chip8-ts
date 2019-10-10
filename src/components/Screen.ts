@@ -59,8 +59,29 @@ export default class Screen {
 	xorPixel(x: number, y: number, value: boolean) {
 		x = x % this.width;
 		y = y % this.height;
+		if (!this.screen) {
+			throw new Error("Somehow this.screen is undefined....");
+		}
+		if (!this.screen[x]) {
+			throw new Error(`Screen width incorrect, this.screen[${x}] is not defined...`);
+		}
+		if (this.screen[x].length !== 32) {
+			throw new Error(`Screen height incorrect, this.screen[${x}].length === ${this.screen[x].length}...`);
+		}
 		let initial = this.screen[x][y];
 		this.screen[x][y] = this.screen[x][y] !== value;
 		return initial && !this.screen[x][y];
+	}
+
+	drawByte(x: number, y: number, byte: number): boolean {
+		let erased = false;
+		for (let i = 0; i < 8; i++) {
+			const mask = byte & (0b10000000 >> i);
+			const bit = mask >> (7 - i);
+			if (this.xorPixel(x + i, y, bit === 1 ? true : false)) {
+				erased = true;
+			}
+		}
+		return erased;
 	}
 }

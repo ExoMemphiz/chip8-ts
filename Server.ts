@@ -52,7 +52,14 @@ function setupSocket(socket: ioSocket.Socket) {
     
 	socket.on("debug", data => {
 		// @ts-ignore
-		socket["emulator"].debug(data[0], parseInt(data[1]));
+		// socket["emulator"].debug(data[0], parseInt(data[1]), parseInt(data[2]));
+		// @ts-ignore
+		const memorySlice = socket["emulator"].memory.getMemoryViewSlice(parseInt(data[1]), parseInt(data[2]));
+		// @ts-ignore
+		socket["memoryStart"] = parseInt(data[1]); socket["memoryEnd"] = parseInt(data[2]);
+		emitEvent(socket, "memory", memorySlice);
+		emitEvent(socket, "programCounter");
+		emitEvent(socket, "addressRegister");
 	});
     
 	startSocketInterval(socket);
@@ -101,9 +108,22 @@ function startSocketInterval(socket: ioSocket.Socket) {
 	// @ts-ignore
 	socket["intervalID"] = setInterval(() => {
 		emitEvent(socket, "draw");
+		emitEvent(socket, "registers");
+		// @ts-ignore
+		const memorySlice = socket["emulator"].memory.getMemoryViewSlice(socket["memoryStart"], socket["memoryEnd"]);
+		emitEvent(socket, "memory", memorySlice);
+		emitEvent(socket, "stack");
+		emitEvent(socket, "instruction");
+		emitEvent(socket, "programCounter");
+		emitEvent(socket, "addressRegister");
 		// @ts-ignore
 		if (!socket["togglePause"]) {
-			step(socket);
+			try {
+				step(socket);
+			} catch (error) {
+				console.log(error);
+				socket.disconnect();
+			}
 		}
 	}, 1000 / TICKS_PR_SECOND);
 }
@@ -124,7 +144,9 @@ function randomWriteScreen(socket: ioSocket.Socket) {
 }
 */
 
-function emitEvent(socket: ioSocket.Socket, event: "keys" | "draw") {
+function emitEvent(socket: ioSocket.Socket, 
+	event: "keys" | "draw" | "registers" | "memory" | "programCounter" | "addressRegister" | "instruction" | "stack", 
+	data?: any) {
 
 	switch (event) {
 
@@ -135,6 +157,30 @@ function emitEvent(socket: ioSocket.Socket, event: "keys" | "draw") {
 		case "draw":
 			// @ts-ignore
 			return socket.emit(event, socket["emulator"].getScreen());
+            
+		case "registers":
+			// @ts-ignore
+			return socket.emit(event, socket["emulator"].registers.registers);
+            
+		case "memory":
+			return socket.emit(event, data ? data : []);
+              
+		case "programCounter":
+			// @ts-ignore
+			return socket.emit(event, socket["emulator"].registers.programCounter);
+                
+		case "instruction":
+			// @ts-ignore
+			return socket.emit(event, socket["emulator"].cpu.getInstruction());
+            
+		case "addressRegister":
+			// @ts-ignore
+			return socket.emit(event, socket["emulator"].registers.addressRegister);
+            
+		case "stack":
+			// @ts-ignore
+			return socket.emit(event, socket["emulator"].stack.stack);
+                    
 
 	}
 

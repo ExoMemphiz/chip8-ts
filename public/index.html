@@ -8,7 +8,8 @@
     <title>HTML5 Canvas + Node.JS Socket.io</title>
     <style>
         div#container {
-            padding: 10px
+            padding: 10px;
+            clear: both;
         }
         canvas {
             margin-top: 20px
@@ -36,50 +37,113 @@
             justify-content: center;
             align-items: center;
         }
+        button#stepButton {
+            margin-bottom: 20px;
+        }
+        div.column {
+            float: left;
+            width: 50%;
+        }
+        div.innerColumn {
+            float: left;
+            width: 33%;
+            margin-bottom: 15px;
+        }
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 5px;
+            text-align: center;
+        }
+        p.bold {
+            font-style: italic;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
     <div id="container">
-        Chip8 Typescript Emulator
-        <article><!-- our canvas will be inserted here--></article>
-        <table id="hex-keypad">
-            <tr>
-                <td id="hex-number">C</td>
-                <td id="hex-number">D</td>
-                <td id="hex-number">E</td>
-                <td id="hex-number">F</td>
-            </tr>
-            <tr>
-                <td id="hex-number">8</td>
-                <td id="hex-number">9</td>
-                <td id="hex-number">A</td>
-                <td class="pressed" id="hex-number">B</td>
-            </tr>            
-            <tr>
-                <td id="hex-number">4</td>
-                <td id="hex-number">5</td>
-                <td id="hex-number">6</td>
-                <td id="hex-number">7</td>
-            </tr>
-            <tr>
-                <td id="hex-number">0</td>
-                <td id="hex-number">1</td>
-                <td id="hex-number">2</td>
-                <td id="hex-number">3</td>
-            </tr>
-        </table>
-        <div id="description">
-            <p id="infoText"></p>
+        <div class="column">
+            <p>Chip8 Typescript Emulator</p>
+            <article><!-- our canvas will be inserted here--></article>
+            <table id="hex-keypad">
+                <tr>
+                    <td id="hex-number">C</td>
+                    <td id="hex-number">D</td>
+                    <td id="hex-number">E</td>
+                    <td id="hex-number">F</td>
+                </tr>
+                <tr>
+                    <td id="hex-number">8</td>
+                    <td id="hex-number">9</td>
+                    <td id="hex-number">A</td>
+                    <td class="pressed" id="hex-number">B</td>
+                </tr>            
+                <tr>
+                    <td id="hex-number">4</td>
+                    <td id="hex-number">5</td>
+                    <td id="hex-number">6</td>
+                    <td id="hex-number">7</td>
+                </tr>
+                <tr>
+                    <td id="hex-number">0</td>
+                    <td id="hex-number">1</td>
+                    <td id="hex-number">2</td>
+                    <td id="hex-number">3</td>
+                </tr>
+            </table>
+            <div id="description">
+                <p id="infoText"></p>
+            </div>
+            Frames Pr Second: <input type="number" id="fps" value="60">
+            <button id="togglePause" onclick="togglePause()">Start</button>
+            <br>
+            <button onclick="step()" id="stepButton">Step</button>
+            <br>
+            Memory Start:<input type="number" id="memoryStart" value="200">
+            <br>
+            Memory End:     <input type="number" id="memoryEnd" value="220">
+            <br>
+            Debug Log Screen: <input type="checkbox" id="screenDebug">
+            <button onclick="debug()">Debug</button>
         </div>
-        Frames Pr Second: <input type="number" id="fps" value="60">
-        <button id="togglePause" onclick="togglePause()">Start</button>
-        <br>
-        <button onclick="step()">Step</button>
-        <br>
-        <br>
-        Memory Region: <input type="number" id="memoryRegion">
-        Debug Log Screen: <input type="checkbox" id="screenDebug">
-        <button onclick="debug()">Debug</button>
+        <div class="column">
+            <p>Debug Information</p>
+            <br>
+            <p class="bold">Registers</p>
+            <table>
+                <tr id="registerRowHeader">
+                    
+                </tr>
+                <tr id="registerRowData">
+
+                </tr>
+            </table>
+            <p class="bold">Program Counter</p>
+            <p id="programCounter"></p>
+            <p class="bold">Current Instruction</p>
+            <p id="instruction"></p>
+            <p class="bold">Address Register</p>
+            <p id="addressRegister"></p>
+            <p class="bold">Memory</p>
+            <div class="innerColumn">
+                <table id="memoryTable1">
+                </table>
+            </div>
+            <div class="innerColumn">
+                <table id="memoryTable2">
+                </table>
+            </div>
+            <div class="innerColumn">
+                <table  id="memoryTable3">
+                </table>
+            </div>
+            <br>
+            <p class="bold stackTitle">Stack</p>
+            <p id="stackTable"></p>
+        </div>
     </div>
     
 
@@ -109,9 +173,7 @@
         })
 
         socket.on("keys", (data) => {
-            console.log(data);
             const hexNumbers = document.querySelectorAll("#hex-number");
-            console.log(hexNumbers);
             for (let i = 0; i < data.length; i++) {
                 if (data[i]) {
                     hexNumbers[i].classList.add("pressed");
@@ -120,6 +182,70 @@
                 }
             }
         })
+
+        socket.on("registers", (data) => {
+            const rowHeader = document.querySelector("#registerRowHeader");
+            const rowData = document.querySelector("#registerRowData");
+            let headerHTML = "";
+            let rowDataHTML = "";
+            for (let i = 0; i <= 0xF; i++) {
+                headerHTML += `<th>v${i.toString(16).toUpperCase()}</th>`;
+                rowDataHTML += `<td>0x${data[i].toString(16).padStart(2, "0").toUpperCase()} (${data[i]})</td>`
+            }
+            rowHeader.innerHTML = headerHTML;
+            rowData.innerHTML = rowDataHTML;
+        });
+
+        socket.on("programCounter", (data) => {
+            const element = document.querySelector("#programCounter");
+            element.innerText = `0x${data.toString(16).padStart(2, "0").toUpperCase()} (${data})`;
+        });
+
+        socket.on("instruction", (data) => {
+            const element = document.querySelector("#instruction");
+            element.innerText = `0x${data.toString(16).padStart(4, "0").toUpperCase()} (${data})`;
+        });
+
+        socket.on("addressRegister", (data) => {
+            const element = document.querySelector("#addressRegister");
+            element.innerText = `0x${data.toString(16).padStart(2, "0").toUpperCase()} (${data})`;
+        });
+
+        socket.on("memory", (data) => {
+            const split = Math.floor(data.length / 3);
+            const startLocation = parseInt(document.querySelector("#memoryStart").value);
+            const memoryTable1 = document.querySelector("#memoryTable1");
+            const memoryTable2 = document.querySelector("#memoryTable2");
+            const memoryTable3 = document.querySelector("#memoryTable3");
+            let table1 = "";
+            for (let i = 0; i < split; i++) {
+                let index = i;
+                table1 += `<tr><th>0x${(startLocation + index).toString(16).padStart(2, "0").toUpperCase()} (${startLocation + index})</th><td>${data[index]}</td></tr>`;
+            }
+            let table2 = "";
+            for (let i = split; i < split * 2; i++) {
+                let index = i;
+                table2 += `<tr><th>0x${(startLocation + index).toString(16).padStart(2, "0").toUpperCase()} (${startLocation + index})</th><td>${data[index]}</td></tr>`;
+            }
+            let table3 = "";
+            for (let i = split * 2; i < data.length; i++) {
+                let index = i;
+                table3 += `<tr><th>0x${(startLocation + index).toString(16).padStart(2, "0").toUpperCase()} (${startLocation + index})</th><td>${data[index]}</td></tr>`;
+            }
+            memoryTable1.innerHTML = table1;
+            memoryTable2.innerHTML = table2;
+            memoryTable3.innerHTML = table3;
+        });
+
+        socket.on("stack", (data) => {
+            let stackData = "[";
+            for (let i = 0; i < data.length; i++) {
+                stackData += `0x${data[i].toString(16).padStart(4, "0").toUpperCase()} (${data[i]}), `;
+            }
+            
+            stackData = (stackData.length > 2 ? stackData.slice(0, stackData.length - 2) : stackData) + "]";
+            document.querySelector("#stackTable").innerText = stackData;
+        });
 
         document.body.onkeydown = (e) => {
             socket.emit("keydown", e.key);
@@ -135,8 +261,9 @@
 
         function debug() {
             const screenDebug = document.querySelector("#screenDebug");
-            const memoryRegion = document.querySelector("#memoryRegion");
-            socket.emit("debug", [screenDebug.checked, memoryRegion.value]);
+            const memoryStart = document.querySelector("#memoryStart");
+            const memoryEnd = document.querySelector("#memoryEnd");
+            socket.emit("debug", [screenDebug.checked, memoryStart.value, memoryEnd.value]);
         }
 
         function togglePause() {

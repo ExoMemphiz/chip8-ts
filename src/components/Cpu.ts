@@ -32,16 +32,21 @@ export default class CPU {
 		this.soundTimer = soundTimer;
 	}
 
-	executeNextInstruction() {
+	getInstruction() {
 		const pc = this.registers.getProgramCounter();
 		const instruction = (this.memory.getData(pc) << 8) | this.memory.getData(pc + 1);
+		return instruction;
+	}
+
+	executeNextInstruction() {
+		const instruction = this.getInstruction();
 		this.handleInstruction(instruction);
 		this.registers.incrementProgramCounter();
 		this.soundTimer.tick();
 		this.delayTimer.tick();
 	}
 
-	debug(screen: boolean = false, memoryRegion: number = 0x200) {
+	debug(screen: boolean = false, memoryStart: number = 0x200, memoryEnd = 0x220) {
 		console.log("-- Registers V0 to VF --");
 		console.table(this.registers.getAll());
 
@@ -63,7 +68,7 @@ export default class CPU {
 		]);
 
 		console.log("-- Memory --");
-		console.table(this.memory.getMemoryView32(memoryRegion));
+		console.table(this.memory.getMemoryViewSlice(memoryStart, memoryEnd));
 		// console.table(this.memory.getMemoryView().buffer.slice(0, 16));
 
 		if (screen) {
@@ -95,7 +100,7 @@ export default class CPU {
 			case 0x2:
 				// 2NNN
 				// Call subroutine at nnn
-				this.stack.push(this.registers.getProgramCounter() + 1);
+				this.stack.push(this.registers.getProgramCounter() + 2);
 				this.registers.setProgramCounter(nnn);
 				return this.registers.decrementProgramCounter();
 
@@ -167,15 +172,26 @@ export default class CPU {
 				// eslint-disable-next-line no-case-declarations
 				let erasedPixels = false;
 				for (let i = 0; i < n; i++) {
-					const bits = this.memory.getData(this.registers.getAddressRegister());
+					const byte = this.memory.getData(this.registers.getAddressRegister());
+					const erased = this.screen.drawByte(
+						this.registers.getRegister(x),
+						this.registers.getRegister(y),
+						byte
+					);
+					if (erased) {
+						erasedPixels = true;
+					}
+					/*
+                    let pointX = this.registers.getRegister(x) + i * 8;
+                    let pointY = this.registers.getRegister(y) + i;
 					for (let j = 0; j < 8; j++) {
 						const bit = (bits & (0b1 << j)) >> j;
-						let pointX = this.registers.getRegister(x) + i * 8 + j;
-						let pointY = this.registers.getRegister(y) + i;
+						
 						if (this.screen.xorPixel(pointX, pointY, bit === 0 ? false : true)) {
 							erasedPixels = true;
 						}
-					}
+                    }
+                    */
 				}
 				return this.registers.setRegister(0xF, erasedPixels ? 1 : 0);
 

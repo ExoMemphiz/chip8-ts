@@ -1,5 +1,5 @@
 export default class Keyboard {
-	KEYS = ["1", "2", "3", "4", "q", "w", "e", "r", "a", "s", "d", "f", "z", "x", "c", "v"];
+	KEYS = ["x", "1", "2", "3", "q", "w", "e", "a", "s", "d", "z", "c", "4", "r", "f", "v"];
 	PRESSED: Array<boolean>;
 
 	constructor() {

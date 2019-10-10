@@ -30,7 +30,7 @@ export default class Memory {
 		);
 	}
 
-	getMemoryViewSlice(memoryStart: number, memoryEnd: number) {
+	getMemoryViewSlice(memoryStart: number = 200, memoryEnd: number = 220) {
 		return [...new Uint8Array(this.memoryView.buffer).slice(memoryStart, memoryEnd + 1)].map(
 			value => `hex: 0x${value.toString(16).padStart(2, "0")}  dec: ${value.toString().padStart(3, "0")}`
 		);

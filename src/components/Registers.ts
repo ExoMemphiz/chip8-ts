@@ -49,6 +49,10 @@ class Registers {
 	getProgramCounter() {
 		return this.programCounter;
 	}
+
+	resetProgramCounter() {
+		this.programCounter = 0x200;
+	}
 }
 
 export default Registers;

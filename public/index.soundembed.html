@@ -64,34 +64,37 @@
     </style>
 </head>
 <body>
+    <audio id="audio" src="http://www.soundjay.com/button/beep-02.wav" autostart="false" ></audio>
     <div id="container">
         <div class="column">
-            <p>Chip8 Typescript Emulator</p>
+            Chip8 Typescript Emulator
+            <select id="gameSelector" onchange="changeGame()">
+            </select>
             <article><!-- our canvas will be inserted here--></article>
             <table id="hex-keypad">
                 <tr>
+                    <td id="hex-number">1</td>
+                    <td id="hex-number">2</td>
+                    <td id="hex-number">3</td>
                     <td id="hex-number">C</td>
-                    <td id="hex-number">D</td>
-                    <td id="hex-number">E</td>
-                    <td id="hex-number">F</td>
                 </tr>
-                <tr>
-                    <td id="hex-number">8</td>
-                    <td id="hex-number">9</td>
-                    <td id="hex-number">A</td>
-                    <td class="pressed" id="hex-number">B</td>
-                </tr>            
                 <tr>
                     <td id="hex-number">4</td>
                     <td id="hex-number">5</td>
                     <td id="hex-number">6</td>
+                    <td id="hex-number">D</td>
+                </tr>            
+                <tr>
                     <td id="hex-number">7</td>
+                    <td id="hex-number">8</td>
+                    <td id="hex-number">9</td>
+                    <td id="hex-number">E</td>
                 </tr>
                 <tr>
+                    <td id="hex-number">A</td>
                     <td id="hex-number">0</td>
-                    <td id="hex-number">1</td>
-                    <td id="hex-number">2</td>
-                    <td id="hex-number">3</td>
+                    <td id="hex-number">B</td>
+                    <td id="hex-number">F</td>
                 </tr>
             </table>
             <div id="description">
@@ -153,7 +156,12 @@
     <!-- <script type="text/javascript" src="scripts.js"></script> -->
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
+        const socket = io({
+            'reconnection': true,
+            'reconnectionDelay': 250,
+            'reconnectionDelayMax' : 1000,
+            'reconnectionAttempts': 120
+        });
         const canvas = document.createElement("canvas");
 
         canvas.width = 640;
@@ -247,6 +255,20 @@
             document.querySelector("#stackTable").innerText = stackData;
         });
 
+        socket.on("games", (games) => {
+            console.log(`Received games list:`, games);
+            let gamesData = "";
+            for (let i = 0; i < games.length; i++) {
+                gamesData += `<option value="${games[i]}">${games[i]}</option>`;
+            }
+            console.log(gamesData);
+            document.querySelector("#gameSelector").innerHTML = gamesData;
+        });
+
+        socket.on("beep", () => {
+            beep();
+        })
+
         document.body.onkeydown = (e) => {
             socket.emit("keydown", e.key);
         }
@@ -271,6 +293,15 @@
             const fps = document.querySelector("#fps");
             togglePause.textContent = (togglePause.textContent === "Pause" ? "Start" : "Pause");
             socket.emit("togglePause", fps.value);
+        }
+
+        function changeGame() {
+            socket.emit("changeGame", document.querySelector("#gameSelector").value);
+        }
+
+        function beep() {
+            const sound = document.getElementById("audio");
+            sound.play();
         }
 
     </script>

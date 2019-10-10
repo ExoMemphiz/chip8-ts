@@ -2,7 +2,6 @@ export default class Timer {
 	private hz: number;
 	private value: number;
 	private onEndCallback?: () => void;
-	private intervalID: NodeJS.Timeout | undefined;
 
 	constructor(value: number = 0, onEndCallback?: () => void, hz: number = 60) {
 		this.hz = hz;
@@ -17,6 +16,7 @@ export default class Timer {
 	tick() {
 		if (--this.value <= 0) {
 			this.value = 0;
+		} else {
 			if (this.onEndCallback) {
 				this.onEndCallback();
 			}

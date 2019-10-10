@@ -4,12 +4,11 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "start": "ts-node Index.ts",
+        "start": "ts-node Server.ts",
         "test": "jest",
         "lint": "eslint ./src/**/*",
         "lint-fix": "eslint ./src/**/* --fix",
-        "format": "prettier-eslint --write \"src/**/*.ts\" && prettier-eslint --write \"__tests__/**/*.ts\"",
-        "server": "ts-node Server.ts"
+        "format": "prettier-eslint --write \"src/**/*.ts\" && prettier-eslint --write \"__tests__/**/*.ts\""
     },
     "keywords": [],
     "author": "",

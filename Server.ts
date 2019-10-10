@@ -4,6 +4,7 @@ import ioSocket from "socket.io";
 import open from "open";
 import Chip8 from "./src/Chip8";
 import FileReader from "./src/utils/FileReader";
+import fileReader from "./src/utils/FileReader";
 
 const app = express();
 const server = http.createServer(app);
@@ -12,7 +13,7 @@ const io = ioSocket.listen(server);
 let TICKS_PR_SECOND = 60;
 
 app.get("/", (request, response) => {
-	response.sendFile(__dirname + "/public/index.html");
+	response.sendFile(__dirname + "/public/index.soundembed.html");
 });
 
 let connected = false;
@@ -25,11 +26,25 @@ io.on("connection", (socket) => {
 
 function setupSocket(socket: ioSocket.Socket) {
 
-	let chip8 = new Chip8();
-	chip8.loadRom(FileReader.readFile("/roms/tictac.ch8"));
+	// / Setup Games
+	const files = fileReader.getChip8FilesInDirectory("/roms");
+	console.log("Found games:", files);
+	emitEvent(socket, "games", files);
 
+	// / Setup Emulator
+	let chip8 = new Chip8();
+	chip8.loadRom(FileReader.readFile(`/roms/${files[0]}`));
+
+	// / Setup Sound timer callbacks
+	chip8.setSoundCallback(() => {
+		emitEvent(socket, "beep");
+	});
+
+	// / Setup socket with emulator attached
 	// @ts-ignore
 	socket["emulator"] = chip8;
+    
+	// / Event handles for the socket
 	// @ts-ignore
 	socket["togglePause"] = true;
 	socket.on("keydown", (data) => {
@@ -76,6 +91,12 @@ function setupSocket(socket: ioSocket.Socket) {
 		startSocketInterval(socket);
 		togglePause(socket);
 	});
+    
+	socket.on("changeGame", (game) => {
+		console.log("Changing game to:", game);
+		// @ts-ignore
+		socket["emulator"].loadRom(FileReader.readFile(`/roms/${game}`));
+	});
 
 }
 
@@ -108,14 +129,16 @@ function startSocketInterval(socket: ioSocket.Socket) {
 	// @ts-ignore
 	socket["intervalID"] = setInterval(() => {
 		emitEvent(socket, "draw");
-		emitEvent(socket, "registers");
+		/*
+        emitEvent(socket, "registers");
 		// @ts-ignore
 		const memorySlice = socket["emulator"].memory.getMemoryViewSlice(socket["memoryStart"], socket["memoryEnd"]);
 		emitEvent(socket, "memory", memorySlice);
 		emitEvent(socket, "stack");
 		emitEvent(socket, "instruction");
 		emitEvent(socket, "programCounter");
-		emitEvent(socket, "addressRegister");
+        emitEvent(socket, "addressRegister");
+        */
 		// @ts-ignore
 		if (!socket["togglePause"]) {
 			try {
@@ -133,19 +156,9 @@ function clearSocketInterval(socket: ioSocket.Socket) {
 	clearInterval(socket["intervalID"]);
 }
 
-/*
-function randomWriteScreen(socket: ioSocket.Socket) {
-	// @ts-ignore
-	const screen: Array<Array<boolean>> = socket["emulator"].getScreen();
-	let x = Math.floor((Math.random() * screen.length));
-	let y = Math.floor((Math.random() * screen[x].length));
-	// @ts-ignore
-	socket["emulator"].flipPixel(x, y);
-}
-*/
-
 function emitEvent(socket: ioSocket.Socket, 
-	event: "keys" | "draw" | "registers" | "memory" | "programCounter" | "addressRegister" | "instruction" | "stack", 
+	event: "keys" | "draw" | "registers" | "memory" | "programCounter" | 
+           "addressRegister" | "instruction" | "stack" | "games" | "beep", 
 	data?: any) {
 
 	switch (event) {
@@ -181,6 +194,11 @@ function emitEvent(socket: ioSocket.Socket,
 			// @ts-ignore
 			return socket.emit(event, socket["emulator"].stack.stack);
                     
+		case "games":
+			return socket.emit(event, data ? data : []);
+            
+		case "beep":
+			return socket.emit(event);
 
 	}
 

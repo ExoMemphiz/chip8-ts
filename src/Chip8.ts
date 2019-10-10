@@ -46,11 +46,13 @@ class Chip8 {
 	}
 
 	loadRom(buffer: Buffer) {
+		this.screen.clearScreen();
 		let memoryLocation = 0x200;
 		for (const element of buffer) {
 			this.memory.storeData(element, memoryLocation);
 			memoryLocation++;
 		}
+		this.registers.resetProgramCounter();
 	}
 
 	getKeyboard() {
@@ -63,6 +65,14 @@ class Chip8 {
 
 	flipPixel(x: number, y: number) {
 		this.screen.flipPixel(x, y);
+	}
+
+	setSoundCallback(callback: () => void) {
+		this.soundTimer.onEnd(callback);
+	}
+
+	setDelayCallback(callback: () => void) {
+		this.delayTimer.onEnd(callback);
 	}
 }
 

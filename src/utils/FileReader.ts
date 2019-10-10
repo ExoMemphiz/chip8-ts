@@ -9,6 +9,13 @@ class FileReader {
 		}
 		throw new Error(`File ${resolvedPath} does not exist`);
 	}
+	getChip8FilesInDirectory(filePath: string) {
+		const resolvedPath = path.resolve(__dirname, `../../${filePath}`);
+		if (fs.existsSync(resolvedPath)) {
+			return fs.readdirSync(resolvedPath).filter(f => f.match(/\.ch8$/));
+		}
+		throw new Error(`Directory ${resolvedPath} does not exist`);
+	}
 }
 
 const fileReader = new FileReader();

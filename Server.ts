@@ -126,10 +126,12 @@ function step(socket: ioSocket.Socket) {
 }
 
 function startSocketInterval(socket: ioSocket.Socket) {
+    console.log(`Starting socket interval`);
+    emitEvent(socket, "draw");
 	// @ts-ignore
 	socket["intervalID"] = setInterval(() => {
-		emitEvent(socket, "draw");
-		/*
+        //emitEvent(socket, "draw");
+        /*
         emitEvent(socket, "registers");
 		// @ts-ignore
 		const memorySlice = socket["emulator"].memory.getMemoryViewSlice(socket["memoryStart"], socket["memoryEnd"]);
@@ -142,7 +144,15 @@ function startSocketInterval(socket: ioSocket.Socket) {
 		// @ts-ignore
 		if (!socket["togglePause"]) {
 			try {
-				step(socket);
+                let draw = false;
+                // @ts-ignore
+                if (socket["emulator"].willDraw()) {
+                    draw = true;
+                }
+                step(socket);
+                if (draw) {
+                    emitEvent(socket, "draw");
+                }
 			} catch (error) {
 				console.log(error);
 				socket.disconnect();
@@ -168,8 +178,29 @@ function emitEvent(socket: ioSocket.Socket,
 			return socket.emit(event, socket["emulator"].getKeyboard().getPressed());
             
 		case "draw":
-			// @ts-ignore
-			return socket.emit(event, socket["emulator"].getScreen());
+            // @ts-ignore
+            const newScreen = socket["emulator"].getScreen();
+
+            return socket.emit(event, newScreen);
+
+            // @ts-ignore
+            const oldScreen = socket["oldScreen"];
+            if (!oldScreen) {
+                // @ts-ignore
+                socket["oldScreen"] = newScreen;
+                return socket.emit(event, newScreen);
+            } else {
+                for (let i = 0; i < newScreen.length; i++) {
+                    for (let j = 0; j < newScreen[i].length; j++) {
+                        if (oldScreen[i][j] !== newScreen[i][j]) {
+                            console.log(`Found new screen. Emitting!`);
+                            return socket.emit(event, newScreen);
+                        }
+                    }
+                }
+            }
+            // console.log(`Nothing changed, skipping emit...`);
+			return;
             
 		case "registers":
 			// @ts-ignore

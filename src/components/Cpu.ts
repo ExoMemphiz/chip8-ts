@@ -388,12 +388,14 @@ export default class CPU {
 				// eslint-disable-next-line no-case-declarations
 				let ones = Math.floor(this.registers.getRegister(x) % 10);
 
+                /*
 				console.log(
 					`FX33: on value: ${this.registers.getRegister(
 						x
 					)} hundreds: ${hundreds}, tens: ${tens}, onex: ${ones}`
 				);
-
+                        */
+                       
 				this.memory.storeData(hundreds, this.registers.getAddressRegister());
 				this.memory.storeData(tens, this.registers.getAddressRegister() + 1);
 				this.memory.storeData(ones, this.registers.getAddressRegister() + 2);

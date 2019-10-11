@@ -110,7 +110,10 @@
             <br>
             Memory End:     <input type="number" id="memoryEnd" value="220">
             <br>
-            Debug Log Screen: <input type="checkbox" id="screenDebug">
+            <button onclick="getMemory()" id="memorySlice">Get Memory Slice</button>
+            <br>
+            <br>
+            <input type="checkbox" id="debugEnabled" disabled=false>
             <button onclick="debug()">Debug</button>
         </div>
         <div class="column">
@@ -274,6 +277,10 @@
             document.querySelector("#gameSelector").innerHTML = gamesData;
         });
 
+        socket.on("gameInstruction", () => {
+            
+        })
+
         socket.on("beep", () => {
             beep();
         })
@@ -290,11 +297,11 @@
             socket.emit("step");
         }
 
-        function debug() {
+        function getMemory() {
             const screenDebug = document.querySelector("#screenDebug");
             const memoryStart = document.querySelector("#memoryStart");
             const memoryEnd = document.querySelector("#memoryEnd");
-            socket.emit("debug", [screenDebug.checked, memoryStart.value, memoryEnd.value]);
+            socket.emit("getMemory", [screenDebug.checked, memoryStart.value, memoryEnd.value]);
         }
 
         function togglePause() {
@@ -315,6 +322,11 @@
 
         function reset() {
             socket.emit("reset", document.querySelector("#gameSelector").value);
+        }
+
+        function debug() {
+            socket.emit("debug");
+            document.querySelector("#debugEnabled").checked = !document.querySelector("#debugEnabled").checked;
         }
 
     </script>

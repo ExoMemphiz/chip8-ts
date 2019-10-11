@@ -7,10 +7,11 @@ import FileReader from "./src/utils/FileReader";
 import fileReader from "./src/utils/FileReader";
 
 const app = express();
+app.use("/public", express.static("./public/"));
 const server = http.createServer(app);
 const io = ioSocket.listen(server);
 
-const DEBUG = true;
+let DEBUG = false;
 
 let TICKS_PR_SECOND = 500;
 
@@ -30,7 +31,6 @@ function setupSocket(socket: ioSocket.Socket) {
 
 	// / Setup Games
 	const files = fileReader.getChip8FilesInDirectory("/roms");
-	console.log("Found games:", files);
 	emitEvent(socket, "games", files);
 
 	// / Setup Emulator
@@ -70,7 +70,11 @@ function setupSocket(socket: ioSocket.Socket) {
 		step(socket);
 	});
     
-	socket.on("debug", (data: Array<string>) => {
+	socket.on("debug", () => {
+		DEBUG = !DEBUG;
+	});
+    
+	socket.on("getMemory", (data: Array<string>) => {
 		// @ts-ignore
 		// socket["emulator"].debug(data[0], parseInt(data[1]), parseInt(data[2]));
 		// @ts-ignore
@@ -78,8 +82,8 @@ function setupSocket(socket: ioSocket.Socket) {
 		// @ts-ignore
 		socket["memoryStart"] = parseInt(data[1]); socket["memoryEnd"] = parseInt(data[2]);
 		emitEvent(socket, "memory", memorySlice);
-		emitEvent(socket, "programCounter");
-		emitEvent(socket, "addressRegister");
+		// emitEvent(socket, "programCounter");
+		// emitEvent(socket, "addressRegister");
 	});
     
 	startSocketInterval(socket);
@@ -138,7 +142,6 @@ function step(socket: ioSocket.Socket) {
 }
 
 function startSocketInterval(socket: ioSocket.Socket) {
-	console.log("Starting socket interval");
 	emitEvent(socket, "draw");
 	// @ts-ignore
 	socket["intervalID"] = setInterval(() => {

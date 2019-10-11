@@ -70,6 +70,7 @@
             Chip8 Typescript Emulator
             <select id="gameSelector" onchange="changeGame()">
             </select>
+            <button id="reset" onclick="reset()">Reset</button>
             <article><!-- our canvas will be inserted here--></article>
             <table id="hex-keypad">
                 <tr>
@@ -158,9 +159,9 @@
     <script>
         const socket = io({
             'reconnection': true,
-            'reconnectionDelay': 250,
+            'reconnectionDelay': 50,
             'reconnectionDelayMax' : 1000,
-            'reconnectionAttempts': 120
+            'reconnectionAttempts': 600
         });
         const canvas = document.createElement("canvas");
 
@@ -177,6 +178,14 @@
                     context.fillStyle = data[i][j] ? "white" : "black";
                     context.fillRect(i * 10, j * 10, 10, 10);
                 }
+            }
+        });
+
+        socket.on("drawDiff", (data) => {
+            for (let i = 0; i < data.length; i++) {
+                const {x, y, val} = data[i];
+                context.fillStyle = val ? "white" : "black";
+                context.fillRect(x * 10, y * 10, 10, 10);
             }
         })
 
@@ -258,12 +267,10 @@
         });
 
         socket.on("games", (games) => {
-            console.log(`Received games list:`, games);
             let gamesData = "";
             for (let i = 0; i < games.length; i++) {
                 gamesData += `<option value="${games[i]}">${games[i]}</option>`;
             }
-            console.log(gamesData);
             document.querySelector("#gameSelector").innerHTML = gamesData;
         });
 
@@ -304,6 +311,10 @@
         function beep() {
             const sound = document.getElementById("audio");
             sound.play();
+        }
+
+        function reset() {
+            socket.emit("reset", document.querySelector("#gameSelector").value);
         }
 
     </script>

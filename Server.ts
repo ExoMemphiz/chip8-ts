@@ -10,6 +10,8 @@ const app = express();
 const server = http.createServer(app);
 const io = ioSocket.listen(server);
 
+const DEBUG = true;
+
 let TICKS_PR_SECOND = 500;
 
 app.get("/", (request, response) => {
@@ -47,25 +49,28 @@ function setupSocket(socket: ioSocket.Socket) {
 	// / Event handles for the socket
 	// @ts-ignore
 	socket["togglePause"] = true;
-	socket.on("keydown", (data) => {
+    
+	socket.on("keydown", (data: string) => {
 		let mapped = mapKey(socket, data);
 		if (typeof(mapped) === "number") {
 			pressKey(socket, mapped);
 			emitEvent(socket, "keys");
 		}
 	});
-	socket.on("keyup", (data) => {
+    
+	socket.on("keyup", (data: string) => {
 		let mapped = mapKey(socket, data);
 		if (typeof(mapped) === "number") {
 			releaseKey(socket, mapped);
 			emitEvent(socket, "keys");
 		}
 	});
+    
 	socket.on("step", () => {
 		step(socket);
 	});
     
-	socket.on("debug", data => {
+	socket.on("debug", (data: Array<string>) => {
 		// @ts-ignore
 		// socket["emulator"].debug(data[0], parseInt(data[1]), parseInt(data[2]));
 		// @ts-ignore
@@ -85,17 +90,25 @@ function setupSocket(socket: ioSocket.Socket) {
 		clearInterval(socket["intervalID"]);
 	});
     
-	socket.on("togglePause", (fps) => {
+	socket.on("togglePause", (fps: string) => {
 		TICKS_PR_SECOND = parseInt(fps);
 		clearSocketInterval(socket);
 		startSocketInterval(socket);
 		togglePause(socket);
 	});
     
-	socket.on("changeGame", (game) => {
+	socket.on("changeGame", (game: string) => {
 		console.log("Changing game to:", game);
 		// @ts-ignore
 		socket["emulator"].loadRom(FileReader.readFile(`/roms/${game}`));
+	});
+    
+	socket.on("reset", (game: string) => {
+		// @ts-ignore
+		socket["emulator"].reset();
+		// @ts-ignore
+		socket["emulator"].loadRom(FileReader.readFile(`/roms/${game}`));
+		emitEvent(socket, "draw");
 	});
 
 }
@@ -105,7 +118,7 @@ function togglePause(socket: ioSocket.Socket) {
 	socket["togglePause"] = !socket["togglePause"];
 }
 
-function mapKey(socket: ioSocket.Socket, data: any) {
+function mapKey(socket: ioSocket.Socket, data: string) {
 	// @ts-ignore
 	return socket["emulator"].getKeyboard().mapKeyToValue(data);
 }
@@ -121,44 +134,52 @@ function releaseKey(socket: ioSocket.Socket, key: number) {
 }
 
 function step(socket: ioSocket.Socket) {
-	// @ts-ignore
-	return socket["emulator"].step();
+	stepAndDraw(socket);
 }
 
 function startSocketInterval(socket: ioSocket.Socket) {
-    console.log(`Starting socket interval`);
-    emitEvent(socket, "draw");
+	console.log("Starting socket interval");
+	emitEvent(socket, "draw");
 	// @ts-ignore
 	socket["intervalID"] = setInterval(() => {
-        //emitEvent(socket, "draw");
-        /*
-        emitEvent(socket, "registers");
-		// @ts-ignore
-		const memorySlice = socket["emulator"].memory.getMemoryViewSlice(socket["memoryStart"], socket["memoryEnd"]);
-		emitEvent(socket, "memory", memorySlice);
-		emitEvent(socket, "stack");
-		emitEvent(socket, "instruction");
-		emitEvent(socket, "programCounter");
-        emitEvent(socket, "addressRegister");
-        */
+		if (DEBUG) {
+			emitEvent(socket, "registers");
+			// @ts-ignore
+			const memStart = socket["memoryStart"];
+			// @ts-ignore
+			const memEnd = socket["memoryEnd"];
+			// @ts-ignore
+			const memorySlice = socket["emulator"].memory.getMemoryViewSlice(memStart, memEnd);
+			emitEvent(socket, "memory", memorySlice);
+			emitEvent(socket, "stack");
+			emitEvent(socket, "instruction");
+			emitEvent(socket, "programCounter");
+			emitEvent(socket, "addressRegister");
+		}
+        
 		// @ts-ignore
 		if (!socket["togglePause"]) {
 			try {
-                let draw = false;
-                // @ts-ignore
-                if (socket["emulator"].willDraw()) {
-                    draw = true;
-                }
-                step(socket);
-                if (draw) {
-                    emitEvent(socket, "draw");
-                }
+				stepAndDraw(socket);
 			} catch (error) {
 				console.log(error);
 				socket.disconnect();
 			}
 		}
-	}, 1000 / TICKS_PR_SECOND);
+	}, Math.ceil(1000 / TICKS_PR_SECOND));
+}
+
+function stepAndDraw(socket: ioSocket.Socket) {
+	let draw = false;
+	// @ts-ignore
+	if (socket["emulator"].willDraw()) {
+		draw = true;
+	}
+	// @ts-ignore
+	socket["emulator"].step();
+	if (draw) {
+		emitEvent(socket, "drawDiff");
+	}
 }
 
 function clearSocketInterval(socket: ioSocket.Socket) {
@@ -168,8 +189,8 @@ function clearSocketInterval(socket: ioSocket.Socket) {
 
 function emitEvent(socket: ioSocket.Socket, 
 	event: "keys" | "draw" | "registers" | "memory" | "programCounter" | 
-           "addressRegister" | "instruction" | "stack" | "games" | "beep", 
-	data?: any) {
+           "addressRegister" | "instruction" | "stack" | "games" | "beep" | "drawDiff", 
+	data?: Array<string>): any {
 
 	switch (event) {
 
@@ -177,30 +198,44 @@ function emitEvent(socket: ioSocket.Socket,
 			// @ts-ignore
 			return socket.emit(event, socket["emulator"].getKeyboard().getPressed());
             
-		case "draw":
-            // @ts-ignore
-            const newScreen = socket["emulator"].getScreen();
-
-            return socket.emit(event, newScreen);
-
-            // @ts-ignore
-            const oldScreen = socket["oldScreen"];
-            if (!oldScreen) {
-                // @ts-ignore
-                socket["oldScreen"] = newScreen;
-                return socket.emit(event, newScreen);
-            } else {
-                for (let i = 0; i < newScreen.length; i++) {
-                    for (let j = 0; j < newScreen[i].length; j++) {
-                        if (oldScreen[i][j] !== newScreen[i][j]) {
-                            console.log(`Found new screen. Emitting!`);
-                            return socket.emit(event, newScreen);
-                        }
-                    }
-                }
-            }
-            // console.log(`Nothing changed, skipping emit...`);
-			return;
+		case "draw": {
+			// @ts-ignore
+			const newScreen = socket["emulator"].getScreen();
+			return socket.emit(event, newScreen);
+		}
+        
+		case "drawDiff": {
+			// @ts-ignore
+			const oldScreen = socket["oldScreen"];
+			// @ts-ignore
+			const newScreen = socket["emulator"].getScreen();
+			const diffArray = [];
+			if (oldScreen) {
+				// eslint-disable-next-line unicorn/no-for-loop
+				for (let x = 0; x < oldScreen.length; x++) {
+					// eslint-disable-next-line unicorn/no-for-loop
+					for (let y = 0; y < oldScreen[x].length; y++) {
+						if (oldScreen[x][y] !== newScreen[x][y]) {
+							diffArray.push({
+								x,
+								y,
+								// eslint-disable-next-line unicorn/prevent-abbreviations
+								val: newScreen[x][y]
+							});
+						}
+					}
+				}
+			} else {
+				console.log("Oldscreen does not exist...");
+			}
+			// @ts-ignore
+			socket["oldScreen"] = JSON.parse(JSON.stringify(newScreen));
+			if (diffArray.length > 0) {
+				console.log(`Sending diff array of size: ${diffArray.length}`);
+				return socket.emit(event, diffArray);
+			}
+			return emitEvent(socket, "draw");
+		}
             
 		case "registers":
 			// @ts-ignore
@@ -241,6 +276,6 @@ server.listen(3000, () => {
 		if (!connected) {
 			open("http://localhost:3000");
 		}
-	}, 2000);
+	}, 800);
 });
 

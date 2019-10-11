@@ -1,8 +1,14 @@
 export default class Memory {
-	private memory: ArrayBuffer;
-	private memoryView: DataView;
+	private size: number;
+	private memory!: ArrayBuffer;
+	private memoryView!: DataView;
 
 	constructor(size: number) {
+		this.size = size;
+		this.init(size);
+	}
+
+	private init(size: number) {
 		if (size <= 0) {
 			throw new Error("Memory size must be greater than 0");
 		}
@@ -38,5 +44,9 @@ export default class Memory {
 
 	getUintArray() {
 		return [...new Uint8Array(this.memoryView.buffer)];
+	}
+
+	reset() {
+		this.init(this.size);
 	}
 }

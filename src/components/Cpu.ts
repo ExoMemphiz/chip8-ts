@@ -130,7 +130,7 @@ export default class CPU {
 			case 0x7:
 				// 7XNN
 				// vX += nn
-				return this.registers.setRegister(x, (this.registers.getRegister(x) + nn) % 0xFF);
+				return this.registers.setRegister(x, (this.registers.getRegister(x) + nn) & 0xFF);
 
 			case 0x8:
 				return this.handleOpcode8(instruction);
@@ -181,17 +181,6 @@ export default class CPU {
 					if (erased) {
 						erasedPixels = true;
 					}
-					/*
-                    let pointX = this.registers.getRegister(x) + i * 8;
-                    let pointY = this.registers.getRegister(y) + i;
-					for (let j = 0; j < 8; j++) {
-						const bit = (bits & (0b1 << j)) >> j;
-						
-						if (this.screen.xorPixel(pointX, pointY, bit === 0 ? false : true)) {
-							erasedPixels = true;
-						}
-                    }
-                    */
 				}
 				return this.registers.setRegister(0xF, erasedPixels ? 1 : 0);
 
@@ -388,14 +377,14 @@ export default class CPU {
 				// eslint-disable-next-line no-case-declarations
 				let ones = Math.floor(this.registers.getRegister(x) % 10);
 
-                /*
+				/*
 				console.log(
 					`FX33: on value: ${this.registers.getRegister(
 						x
 					)} hundreds: ${hundreds}, tens: ${tens}, onex: ${ones}`
 				);
                         */
-                       
+
 				this.memory.storeData(hundreds, this.registers.getAddressRegister());
 				this.memory.storeData(tens, this.registers.getAddressRegister() + 1);
 				this.memory.storeData(ones, this.registers.getAddressRegister() + 2);

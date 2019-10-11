@@ -26,6 +26,14 @@ class Registers {
 		return this.registers;
 	}
 
+	resetAll() {
+		this.resetProgramCounter();
+		for (let i = 0; i < this.registers.length; i++) {
+			this.registers[i] = 0x0;
+		}
+		this.addressRegister = 0;
+	}
+
 	setAddressRegister(value: number) {
 		this.addressRegister = value;
 	}

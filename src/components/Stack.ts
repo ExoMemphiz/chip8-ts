@@ -1,5 +1,5 @@
 export default class Stack {
-	stack: Array<number>;
+	private stack: Array<number>;
 
 	constructor() {
 		this.stack = [];
@@ -11,5 +11,9 @@ export default class Stack {
 
 	pop() {
 		return this.stack.pop();
+	}
+
+	clear() {
+		this.stack = [];
 	}
 }

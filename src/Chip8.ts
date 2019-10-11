@@ -73,14 +73,21 @@ class Chip8 {
 
 	setDelayCallback(callback: () => void) {
 		this.delayTimer.onEnd(callback);
-    }
-    
-    willDraw() {
-        const instruction = this.cpu.getInstruction();
-        const masked = (instruction & 0xF000) >> (3 * 4);
-        return masked === 0xD;
-    }
+	}
 
+	willDraw() {
+		const instruction = this.cpu.getInstruction();
+		const masked = (instruction & 0xF000) >> (3 * 4);
+		return masked === 0xD;
+	}
+
+	reset() {
+		this.screen.clearScreen();
+		this.cpu.registers.resetAll();
+		this.stack.clear();
+		this.memory.reset();
+		numberSprites.loadIntoMemory(this.memory);
+	}
 }
 
 export default Chip8;
